@@ -1,21 +1,16 @@
 package teco.challenge.challengejava.dominio;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.util.*;
 
-@Setter
-@NoArgsConstructor
 public class CalculadoraCostos {
 
-    private List<camino> caminos;
+    private List<Camino> caminos;
 
     public BigDecimal calcularCosto(PuntoDeVenta puntoA, PuntoDeVenta puntoB) {
         // Mapa de adyacencias para representar el grafo
-        Map<PuntoDeVenta, List<camino>> grafo = construirGrafo();
+        Map<PuntoDeVenta, List<Camino>> grafo = construirGrafo();
 
         // Mapa para almacenar las distancias mínimas desde puntoA
         Map<PuntoDeVenta, BigDecimal> distancias = new HashMap<>();
@@ -23,9 +18,9 @@ public class CalculadoraCostos {
         PriorityQueue<PuntoDeVenta> cola = new PriorityQueue<>(Comparator.comparing(distancias::get));
 
         // Inicializar distancias con un valor muy alto
-        for (camino c : caminos) {
-            distancias.putIfAbsent(c.puntoA, BigDecimal.valueOf(Double.MAX_VALUE));
-            distancias.putIfAbsent(c.puntoB, BigDecimal.valueOf(Double.MAX_VALUE));
+        for (Camino c : caminos) {
+            distancias.putIfAbsent(c.getPuntoA(), BigDecimal.valueOf(Double.MAX_VALUE));
+            distancias.putIfAbsent(c.getPuntoB(), BigDecimal.valueOf(Double.MAX_VALUE));
         }
 
         // Inicializar puntoA con distancia 0
@@ -40,11 +35,11 @@ public class CalculadoraCostos {
             visitados.add(actual);
 
             // Explorar vecinos
-            List<camino> vecinos = grafo.getOrDefault(actual, new ArrayList<>());
-            for (camino c : vecinos) {
-                PuntoDeVenta vecino = c.puntoA.equals(actual) ? c.puntoB : c.puntoA;
+            List<Camino> vecinos = grafo.getOrDefault(actual, new ArrayList<>());
+            for (Camino c : vecinos) {
+                PuntoDeVenta vecino = c.getPuntoA().equals(actual) ? c.getPuntoB() : c.getPuntoA();
                 if (!visitados.contains(vecino)) {
-                    BigDecimal nuevoCosto = distancias.get(actual).add(c.costo);
+                    BigDecimal nuevoCosto = distancias.get(actual).add(c.getCosto());
                     if (nuevoCosto.compareTo(distancias.get(vecino)) < 0) {
                         distancias.put(vecino, nuevoCosto);
                         cola.add(vecino);
@@ -57,13 +52,17 @@ public class CalculadoraCostos {
         return distancias.getOrDefault(puntoB, BigDecimal.valueOf(-1)); // -1 indica que no hay camino
     }
 
-    private Map<PuntoDeVenta, List<camino>> construirGrafo() {
-        Map<PuntoDeVenta, List<camino>> grafo = new HashMap<>();
-        for (camino c : caminos) {
-            grafo.computeIfAbsent(c.puntoA, k -> new ArrayList<>()).add(c);
-            grafo.computeIfAbsent(c.puntoB, k -> new ArrayList<>()).add(c);
+    private Map<PuntoDeVenta, List<Camino>> construirGrafo() {
+        Map<PuntoDeVenta, List<Camino>> grafo = new HashMap<>();
+        for (Camino c : caminos) {
+            grafo.computeIfAbsent(c.getPuntoA(), k -> new ArrayList<>()).add(c);
+            grafo.computeIfAbsent(c.getPuntoB(), k -> new ArrayList<>()).add(c);
         }
         return grafo;
+    }
+
+    public void setCaminos(List<Camino> caminos) {
+        this.caminos = new ArrayList<>(caminos);
     }
 
 }
