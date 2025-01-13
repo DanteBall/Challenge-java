@@ -26,7 +26,11 @@ public class Acreditacion {
     @Column(name = "IMPORTE", nullable = false)
     private BigDecimal importe;
 
+    @Column(name = "FECHA_RECEPCION", nullable = false)
     private LocalDate fechaRecepcion;
+
+    @Column(name = "BORRADO", nullable = false)
+    private Boolean borrado = false;
 
     public Acreditacion(Long id, PuntoDeVenta puntoDeVenta, String nombrePuntoVenta, BigDecimal importe, LocalDate fechaRecepcion) {
         this.id = id;
@@ -78,5 +82,13 @@ public class Acreditacion {
 
     public void setFechaRecepcion(LocalDate fechaRecepcion) {
         this.fechaRecepcion = fechaRecepcion;
+    }
+
+    public Boolean getBorrado() {
+        return borrado;
+    }
+
+    public void setBorrado(Boolean borrado) {
+        this.borrado = borrado;
     }
 }

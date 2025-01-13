@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import teco.challenge.challengejava.dominio.CalculadoraCostos;
 import teco.challenge.challengejava.dominio.PuntoDeVenta;
 import teco.challenge.challengejava.dominio.Camino;
+import teco.challenge.challengejava.dominio.ResultadoCosto;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -40,21 +41,26 @@ public class CalculadoraCostosTests {
 
     @Test
     public void testCalcularCostoDirecto() {
-        BigDecimal costo = calculadoraCostos.calcularCosto(puntoA, puntoB);
-        assertEquals(new BigDecimal("10"), costo);
+        ResultadoCosto resultado = calculadoraCostos.calcularCosto(puntoA, puntoB);
+        assertEquals(new BigDecimal("10"), resultado.getCosto());
+        assertEquals(List.of(puntoA, puntoB), resultado.getCamino());
     }
 
     @Test
     public void testCalcularCostoIndirecto() {
-        BigDecimal costo = calculadoraCostos.calcularCosto(puntoA, puntoC);
-        assertEquals(new BigDecimal("25"), costo); // A -> B -> C
+        ResultadoCosto resultado = calculadoraCostos.calcularCosto(puntoA, puntoC);
+        assertEquals(new BigDecimal("25"), resultado.getCosto()); // A -> B -> C
+        assertEquals(List.of(puntoA, puntoB, puntoC), resultado.getCamino());
+
     }
 
     @Test
     public void testCalcularCostoSinCamino() {
         PuntoDeVenta puntoD = new PuntoDeVenta(4L, "Punto D");
-        BigDecimal costo = calculadoraCostos.calcularCosto(puntoA, puntoD);
-        assertEquals(new BigDecimal("-1"), costo); // No hay camino
+        ResultadoCosto resultado = calculadoraCostos.calcularCosto(puntoA, puntoD);
+        assertEquals(new BigDecimal("-1"), resultado.getCosto()); // No hay camino
+        assertEquals(List.of(), resultado.getCamino());
+
     }
 
 }

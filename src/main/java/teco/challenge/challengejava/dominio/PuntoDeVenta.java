@@ -14,6 +14,9 @@ public class PuntoDeVenta {
     @Column(name = "NOMBRE", nullable = false)
     private String nombre;
 
+    @Column(name = "BORRADO", nullable = false)
+    private Boolean borrado = false;
+
     public PuntoDeVenta(Long id, String nombre) {
         this.id = id;
         this.nombre = nombre;
@@ -37,5 +40,13 @@ public class PuntoDeVenta {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
+    }
+
+    public Boolean getBorrado() {
+        return borrado;
+    }
+
+    public void setBorrado(Boolean borrado) {
+        this.borrado = borrado;
     }
 }

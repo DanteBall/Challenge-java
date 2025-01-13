@@ -1,6 +1,5 @@
 package teco.challenge.challengejava.dominio;
 
-
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -8,12 +7,13 @@ public class CalculadoraCostos {
 
     private List<Camino> caminos;
 
-    public BigDecimal calcularCosto(PuntoDeVenta puntoA, PuntoDeVenta puntoB) {
+    public ResultadoCosto calcularCosto(PuntoDeVenta puntoA, PuntoDeVenta puntoB) {
         // Mapa de adyacencias para representar el grafo
         Map<PuntoDeVenta, List<Camino>> grafo = construirGrafo();
 
         // Mapa para almacenar las distancias mínimas desde puntoA
         Map<PuntoDeVenta, BigDecimal> distancias = new HashMap<>();
+        Map<PuntoDeVenta, PuntoDeVenta> previos = new HashMap<>();
         Set<PuntoDeVenta> visitados = new HashSet<>();
         PriorityQueue<PuntoDeVenta> cola = new PriorityQueue<>(Comparator.comparing(distancias::get));
 
@@ -42,14 +42,28 @@ public class CalculadoraCostos {
                     BigDecimal nuevoCosto = distancias.get(actual).add(c.getCosto());
                     if (nuevoCosto.compareTo(distancias.get(vecino)) < 0) {
                         distancias.put(vecino, nuevoCosto);
+                        previos.put(vecino, actual);
                         cola.add(vecino);
                     }
                 }
             }
         }
 
-        // Retornar el costo mínimo al punto objetivo
-        return distancias.getOrDefault(puntoB, BigDecimal.valueOf(-1)); // -1 indica que no hay camino
+        // Reconstruir el camino
+        List<PuntoDeVenta> camino = new ArrayList<>();
+        for (PuntoDeVenta at = puntoB; at != null; at = previos.get(at)) {
+            camino.add(at);
+        }
+        Collections.reverse(camino);
+
+        // Verificar si se encontró un camino válido
+        if (camino.isEmpty() || !camino.get(0).equals(puntoA)) {
+            camino = new ArrayList<>();
+        }
+
+        // Retornar el costo mínimo y el camino
+        BigDecimal costo = distancias.getOrDefault(puntoB, BigDecimal.valueOf(-1)); // -1 indica que no hay camino
+        return new ResultadoCosto(costo, camino);
     }
 
     private Map<PuntoDeVenta, List<Camino>> construirGrafo() {

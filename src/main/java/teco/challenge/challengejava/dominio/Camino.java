@@ -25,7 +25,11 @@ public class Camino {
     @JoinColumn(name = "ID_PUNTO_B", nullable = false)
     private PuntoDeVenta puntoB;
 
+    @Column(name = "COSTO", nullable = false)
     private BigDecimal costo;
+
+    @Column(name = "BORRADO", nullable = false)
+    private Boolean borrado = false;
 
     public Camino(PuntoDeVenta puntoA, PuntoDeVenta puntoB, BigDecimal costo) {
         if (puntoA.getId() > puntoB.getId()) {
@@ -71,5 +75,13 @@ public class Camino {
 
     public void setCosto(BigDecimal costo) {
         this.costo = costo;
+    }
+
+    public Boolean getBorrado() {
+        return borrado;
+    }
+
+    public void setBorrado(Boolean borrado) {
+        this.borrado = borrado;
     }
 }
