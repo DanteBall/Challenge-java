@@ -47,6 +47,10 @@ Se realizaron test unitarios para la calculadora de costos, tambien tenia para l
 pero los tuve que eliminar, ya que al principio pensaba utilizar SpringCache, pero surgio un percance
 y decidi pasar al los singleton por cuestiones de tiempo.
 
+### Manejo de Excepciones
+El manejo de Excepciones no esta tan pulido como me gustaría.
+Pero donde mejor se tratan es en los caminos.
+
 ### Puntos y Caminos
 Se asume que al eliminar un punto de venta se eliminan sus caminos asociados.
 
