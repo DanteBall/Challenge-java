@@ -1,15 +1,16 @@
 package teco.challenge.challengejava.servicios;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import teco.challenge.challengejava.cache.CacheCaminos;
+import teco.challenge.challengejava.cache.CachePuntoVenta;
 import teco.challenge.challengejava.dominio.CalculadoraCostos;
 import teco.challenge.challengejava.dominio.Camino;
 import teco.challenge.challengejava.dominio.PuntoDeVenta;
 import teco.challenge.challengejava.dominio.ResultadoCosto;
+import teco.challenge.challengejava.dto.DTOCamino;
 import teco.challenge.challengejava.repositorios.RepoCamino;
+import teco.challenge.challengejava.repositorios.RepoPuntoVenta;
 
 import java.util.List;
 
@@ -19,60 +20,62 @@ public class ServicioCamino {
     @Autowired
     private RepoCamino repoCamino;
 
-    @Autowired
-    private CacheManager cacheManager;
 
-    @Cacheable(value = "caminos", unless = "#result.isEmpty()")
     public List<Camino> getCaminos() {
-        List<Camino> puntosVenta = repoCamino.findAll().stream().filter(p -> !p.getBorrado()).toList();
-        puntosVenta.forEach(this::cargarCache);
-        return puntosVenta;
+
+        return CacheCaminos.getAll();
     }
 
-    @CachePut(value = "caminos", key = "#camino.id")
-    public void cargarCache(Camino camino) {
-    }
-
-    @Cacheable(value = "caminos", key = "#id", unless = "#result == null")
     public Camino getCamino(Long id) {
-        return repoCamino.findById(id).
-                filter(p -> !p.getBorrado()).orElse(null);
+
+        return CacheCaminos.get(id);
     }
 
-    @CachePut(value = "caminos", key = "#result.id")
-    public Camino saveCamino(Camino camino) {
-        return repoCamino.save(camino);
+    public Camino saveCamino(DTOCamino dtoCamino) {
+        List<PuntoDeVenta> cache = CachePuntoVenta.getAll();
+        PuntoDeVenta puntoA = cache.stream()
+                .filter(p -> p.getId().equals(dtoCamino.getIdPuntoVentaA()))
+                .findFirst().orElse(null);
+
+        PuntoDeVenta puntoB = cache.stream()
+                .filter(p -> p.getId().equals(dtoCamino.getIdPuntoVentaB()))
+                .findFirst().orElse(null);
+        if (puntoA == null || puntoB == null) {
+            throw new RuntimeException("Punto de venta no encontrado");
+        }
+        Camino camino = new Camino(puntoA, puntoB, dtoCamino.getCosto());
+        Camino savedCamino = repoCamino.save(camino);
+        CacheCaminos.put(savedCamino.getId(), savedCamino);
+        return savedCamino;
     }
 
-    public ResultadoCosto calcularCostoMinimo(PuntoDeVenta puntoA, PuntoDeVenta puntoB) {
-        List<Camino> caminos = cacheCaminos();
+    public void deleteCamino(Long id) {
+        Camino camino = repoCamino.findById(id).orElse(null);
+        if (camino != null) {
+            camino.setBorrado(true);
+            repoCamino.save(camino);
+            CacheCaminos.remove(id);
+        }
+    }
+
+    public ResultadoCosto calcularCostoMinimo(Long idPuntoA, Long idPuntoB) {
+        List<Camino> caminos = CacheCaminos.getAll();
+        List<PuntoDeVenta> puntos = CachePuntoVenta.getAll();
+        PuntoDeVenta puntoA = puntos.stream().filter(p -> p.getId().equals(idPuntoA)).findFirst().orElse(null);
+        PuntoDeVenta puntoB = puntos.stream().filter(p -> p.getId().equals(idPuntoB)).findFirst().orElse(null);
         CalculadoraCostos calculadoraCostos = new CalculadoraCostos();
         calculadoraCostos.setCaminos(caminos);
         return calculadoraCostos.calcularCosto(puntoA, puntoB);
     }
 
-    public List<Camino> getCaminosDirectos(PuntoDeVenta puntoA) {
-        List<Camino> caminos = cacheCaminos();
-        return caminos.stream().
-                filter(c -> (c.getPuntoA().equals(puntoA) || c.getPuntoB().equals(puntoA))
-                                                && !c.getBorrado()).toList();
+    public List<Camino> getCaminosDirectos(Long puntoA) {
+        List<Camino> caminos = getCaminos();
+        return caminos.stream()
+                .filter(c -> (c.getPuntoA().getId().equals(puntoA) || c.getPuntoB().getId().equals(puntoA))
+                        && !c.getBorrado()).toList();
     }
 
-    private List<Camino> cacheCaminos(){
-        List<Camino> caminos = null;
-        try {
-           caminos = cacheManager.getCache("caminos").get("caminos", List.class);
-        }
-        catch (NullPointerException e){
-            caminos = getCaminos();
-        }
+    public ServicioCamino() {}
 
-        return caminos;
-
-    }
-
-    public ServicioCamino(RepoCamino repoCamino) {
-        this.repoCamino = repoCamino;
-    }
 
 }

@@ -1,11 +1,12 @@
 package teco.challenge.challengejava.servicios;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import teco.challenge.challengejava.cache.CacheCaminos;
+import teco.challenge.challengejava.cache.CachePuntoVenta;
+import teco.challenge.challengejava.dominio.Camino;
 import teco.challenge.challengejava.dominio.PuntoDeVenta;
+import teco.challenge.challengejava.repositorios.RepoCamino;
 import teco.challenge.challengejava.repositorios.RepoPuntoVenta;
 
 import java.util.List;
@@ -14,42 +15,51 @@ import java.util.List;
 public class ServicioPuntoVenta {
 
     @Autowired
-    private RepoPuntoVenta repoPuntoVenta;
+    private RepoPuntoVenta repoPuntoDeVenta;
 
-    @Cacheable(value = "puntosVenta", unless = "#result.isEmpty()")
+    @Autowired
+    private RepoCamino repoCamino;
+
     public List<PuntoDeVenta> getPuntosVenta() {
-        List<PuntoDeVenta> puntosVenta = repoPuntoVenta.findAll().stream().filter(p -> !p.getBorrado()).toList();
-        puntosVenta.forEach(this::cargarCache);
-        return puntosVenta;
-    }
-
-    @CachePut(value = "puntosVenta", key = "#puntoVenta.id")
-    public void cargarCache(PuntoDeVenta puntoVenta) {
-    }
-
-    @Cacheable(value = "puntosVenta", key = "#id", unless = "#result == null")
-    public PuntoDeVenta getPuntoVenta(Long id) {
-        return repoPuntoVenta.findById(id).filter(p -> !p.getBorrado()).orElse(null);
-    }
-
-    @CachePut(value = "puntosVenta", key = "#result.id")
-    public PuntoDeVenta savePuntoVenta(PuntoDeVenta puntoVenta) {
-        return repoPuntoVenta.save(puntoVenta);
-    }
-
-    @CacheEvict(value = "puntosVenta", key = "#id", condition = "#result != null")
-    public PuntoDeVenta deletePuntoVenta(Long id) {
-        PuntoDeVenta punto = repoPuntoVenta.findById(id).filter(p -> !p.getBorrado()).orElse(null);
-        if (punto != null) {
-            punto.setBorrado(true);
-            repoPuntoVenta.save(punto);
+        List<PuntoDeVenta> puntosDeVenta = CachePuntoVenta.getAll();
+        if (puntosDeVenta.isEmpty()) {
+            puntosDeVenta = repoPuntoDeVenta.findAll().stream().filter(p -> !p.getBorrado()).toList();
+            puntosDeVenta.forEach(puntoDeVenta -> CachePuntoVenta.put(puntoDeVenta.getId(), puntoDeVenta));
         }
-        return punto;
+        return puntosDeVenta;
     }
 
-
-    public ServicioPuntoVenta(RepoPuntoVenta repoPuntoVenta) {
-        this.repoPuntoVenta = repoPuntoVenta;
+    public PuntoDeVenta getPuntoVenta(Long id) {
+        PuntoDeVenta puntoDeVenta = CachePuntoVenta.get(id);
+        if (puntoDeVenta == null) {
+            puntoDeVenta = repoPuntoDeVenta.findById(id).filter(p -> !p.getBorrado()).orElse(null);
+            if (puntoDeVenta != null) {
+                CachePuntoVenta.put(id, puntoDeVenta);
+            }
+        }
+        return puntoDeVenta;
     }
 
+    public PuntoDeVenta savePuntoVenta(PuntoDeVenta puntoDeVenta) {
+        PuntoDeVenta savedPuntoDeVenta = repoPuntoDeVenta.save(puntoDeVenta);
+        CachePuntoVenta.put(savedPuntoDeVenta.getId(), savedPuntoDeVenta);
+        return savedPuntoDeVenta;
+    }
+
+    public void deletePuntoVenta(Long id) {
+        PuntoDeVenta puntoDeVenta = repoPuntoDeVenta.findById(id).orElse(null);
+        if (puntoDeVenta != null) {
+
+            puntoDeVenta.setBorrado(true);
+            repoPuntoDeVenta.save(puntoDeVenta);
+            CachePuntoVenta.remove(id);
+
+            List<Camino> caminos = repoCamino.findByPuntoAOrPuntoB(puntoDeVenta, puntoDeVenta);
+            for (Camino camino : caminos) {
+                camino.setBorrado(true);
+                repoCamino.save(camino);
+                CacheCaminos.remove(camino.getId());
+            }
+        }
+    }
 }
