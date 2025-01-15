@@ -17,7 +17,7 @@
 ### Base de Datos
 puerto utilizado por la base de datos: 3306
 
-nombre de la base de datos: challengejava
+nombre de la base de datos: challengejava (no es necesario crearla, se crea automaticamente)
 
 usuario: root
 
@@ -40,7 +40,7 @@ Se utiliza el patron singleton para tener una unica Cache en la aplicacion. A su
 con la clase "SchedulerCache" que se encarga de actualizar la cache cada 5 minutos. Esto pierde
 un poco el sentido ya que al no tener el LoadBalancer no es necesario, ya que la cache se actualiza
 cada vez que se inserta o actualiza un camino o punto de venta. era una idea que tenia para mantener la cache 
-actualizada entre insancias de la aplicacion.
+actualizada entre instancias de la aplicacion.
 
 ### Testing
 Se realizaron test unitarios para la calculadora de costos, tambien tenia para los servicios
